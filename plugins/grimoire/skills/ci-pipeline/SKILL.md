@@ -52,7 +52,7 @@ Order the levels so the cheapest answers arrive first, but never serialize them 
 The workflow runs code from outside the repository (actions) and, on pull requests, code from contributors. Treat it as an attack surface.
 
 - **Least privilege:** set `permissions: contents: read` at the top, and widen per job only where a job writes. Never give write permissions to a job that runs contributed code.
-- **Pin third-party actions to a full commit SHA**, with the version as a comment. Tags can be moved after you trusted them. Let a dependency bot propose updates for them (section 7).
+- **Pin third-party actions to a full commit SHA**, with the version as a comment. Tags can be moved after you trusted them. Let a dependency bot propose updates for them (section 7). **Use the SHA of the commit, not the SHA of the tag:** an annotated tag is an object of its own with its own SHA, and the code host's "tag" lookup returns that one. Get the commit with `git rev-parse <tag>^{commit}` (or `git ls-remote <repo> '<tag>^{}'`, which lists the commit on the `^{}` line), and check it afterwards by asking the host for that SHA as a commit: a pin that cannot be found as a commit is the tag's.
 - **Use `pull_request`, not `pull_request_target`,** for anything that builds or tests contributed code. The second one runs with secrets and write access.
 - **No untrusted text inside `run:`.** Values such as titles, branch names and messages go through an `env:` variable, never straight into the script.
 - **Secrets only where needed**, passed through `env:`, never as command arguments, never printed. A test pipeline rarely needs any.

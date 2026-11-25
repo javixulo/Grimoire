@@ -5,7 +5,8 @@
     "name": "Javier Montoro",
     "url": "https://github.com/javixulo"
   },
-  "homepage": "https://github.com/javixulo/grimoire",
-  "repository": "https://github.com/javixulo/grimoire",
-  "license": "MIT"
+  "homepage": "https://github.com/javixulo/Grimoire",
+  "repository": "https://github.com/javixulo/Grimoire",
+  "license": "MIT",
+  "keywords": ["specs", "testing", "docker", "ci", "dependabot", "mcp", "dotnet", "changelog", "opentelemetry"]
 }

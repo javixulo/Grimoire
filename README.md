@@ -18,11 +18,11 @@ Skills are used as `grimoire:<skill>` (for example `grimoire:container-delivery`
 From a terminal (the same settings are used by the Claude desktop app and the VS Code extension):
 
 ```bash
-claude plugin marketplace add javixulo/grimoire
+claude plugin marketplace add javixulo/Grimoire
 claude plugin install grimoire@grimoire
 ```
 
-Or inside a session: `/plugin marketplace add javixulo/grimoire`, then `/plugin install grimoire@grimoire`. Install it at the **user** scope (the default) so it applies to every project on that machine. Cloud sessions do not load plugins installed on a machine.
+Or inside a session: `/plugin marketplace add javixulo/Grimoire`, then `/plugin install grimoire@grimoire`. Install it at the **user** scope (the default) so it applies to every project on that machine. Cloud sessions do not load plugins installed on a machine.
 
 ## Update
 

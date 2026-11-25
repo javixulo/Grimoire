@@ -1,0 +1,42 @@
+# <Project name>
+
+<One line: what it is, its language and runtime.>
+
+## Rules
+
+- Everything is **<language and version>**.
+- The specs are in `docs/`. Read `docs/functional_spec.md` and `docs/technical_spec.md` before changing behaviour, and update them when a decision is made.
+- The contract with the clients is <the tool names, schemas and messages / the API / the command line> (technical spec), not the implementation. Do not change it without saying so.
+- Messages shown to a user or to an AI are written for the reader: what happened and what to do next. Never return a raw exception.
+- Write documentation and code in English and communicate with the user in Spanish.
+- A secret (password, key, token) is a Docker secret (a file), never an environment variable of the container, a log line, a message or the repository.
+- <Rules particular to this project: what it must never do, what needs a decision first.>
+
+## Skills
+
+Reusable skills come from the `grimoire` plugin (`grimoire:<skill>`): `use-cases-and-criteria`, `open-questions`, `mcp-tool-design`, `writing-tests`, `ci-pipeline`, `containerize-app`, `container-delivery`, `app-telemetry` and `versioning-and-changelog`. Keep a skill in `.claude/skills/` of this repository only when it is particular to this project.
+
+The agent `grimoire:spec-reviewer` reviews the specs; run it after writing or changing them.
+
+## Commands
+
+```bash
+<build>
+<test>
+<run>
+```
+
+<Variables and files the run needs; point to the README for the rest.>
+
+## Git and secrets
+
+- `.env` and everything in `secrets/` are git-ignored. Never print them, commit them or put them in a URL.
+- Work directly on `main`. Do not create branches unless asked.
+- Commit messages follow Conventional Commits: `type(scope): subject`, with the types `feat`, `fix`, `docs`, `test`, `refactor`, `build`, `ci` and `chore`. The subject is in the imperative and has no final period. The scope is optional.
+- When the user asks for "commit and push", and the work would make several commits, do all the commits first and push **once**, at the end.
+- Never do any of these unless asked explicitly:
+  - commit;
+  - push (asking for a commit is not asking for a push);
+  - rewrite history: force push, `reset --hard`, rebase or amend of published commits, `--no-verify`;
+  - merge into `main`, close pull requests or delete branches.
+- Releases are made from the code host's web page (Releases, "Create new tag on publish"); never publish an image by hand.

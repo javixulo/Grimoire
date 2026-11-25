@@ -1,0 +1,15 @@
+{
+  "name": "grimoire",
+  "description": "Reusable skills, agents and templates for my projects",
+  "owner": {
+    "name": "Javier Montoro",
+    "url": "https://github.com/javixulo"
+  },
+  "plugins": [
+    {
+      "name": "grimoire",
+      "source": "./plugins/grimoire",
+      "description": "Skills for specs, tests, containers, CI, releases and telemetry; the spec-reviewer agent; project templates"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "grimoire",
+  "description": "Skills for specs, tests, containers, CI, releases and telemetry; the spec-reviewer agent; project templates",
+  "author": {
+    "name": "Javier Montoro",
+    "url": "https://github.com/javixulo"
+  },
+  "homepage": "https://github.com/javixulo/grimoire",
+  "repository": "https://github.com/javixulo/grimoire",
+  "license": "MIT"
+}

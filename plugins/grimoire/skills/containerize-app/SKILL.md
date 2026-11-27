@@ -37,8 +37,9 @@ Record the answers that change behaviour in the spec, not only in the Dockerfile
 A compromised process in a container should not be root, and a root-owned file written to a mounted folder is painful for its owner.
 
 - Run as a fixed, high numeric user id. Prefer letting the operator choose it when the container starts, so it can match the owner of the mounted folder, and make sure the app works with any id: it must not need to write inside its own install folder.
-- Never fix permission problems with world-writable folders. The folder's owner and the container's user must match.
-- Document how to find the right ids on the host.
+- Never fix permission problems with world-writable folders. The container's user, or one of its groups, must have the access each folder needs.
+- **The groups of a host user do not reach the container.** The process gets the ids the run file gives it (`user: "uid:gid"` and `group_add`), whatever groups that user has on the host. When folders belong to different groups, give the compose file a `group_add` fed by a variable (its default may repeat the main group, which adds nothing).
+- Document the permissions in the README whenever the container uses something of the host (section 7.2).
 
 ## 3. Configuration and state
 
@@ -81,7 +82,9 @@ When the container starts, check everything the app needs: configuration present
 
 - Expose a cheap, local endpoint that answers only once startup validation has passed. It checks that the process can serve, not the business logic, and calls no outside system.
 - Use the container's health check with a start period long enough for a slow start, so a slow boot is not a failure.
-- Probe with a tool that exists in the image, and probe the address the app listens on (the IPv4 loopback address, not the name `localhost`, which may resolve to IPv6 first).
+- **Probe often only while it starts.** Default: every 5 seconds during a start period of 60 seconds, so the container turns healthy soon, then every 5 minutes, with a timeout of 5 seconds and 3 retries (in a Dockerfile, `--start-interval=5s --start-period=60s --interval=5m --timeout=5s --retries=3`; `--start-interval` needs Docker Engine 25 or later). A probe every 30 seconds for the whole life of the container is noise. State the cost: a hung app is marked unhealthy only after about 15 minutes, and Docker does not restart it for that. Ask for a shorter interval if something acts on the health state. If the compose file declares its own health check, it replaces the image's, so give it the same values.
+- **A successful check leaves nothing behind:** no trace, and no log line at the default level (`app-telemetry`). A failing one is still logged.
+- Probe with a tool that exists in the image.
 - Keep it out of the app's real interface (for example, not a tool or an API route a client could call by mistake).
 
 ## 6. Logs, telemetry and shutdown
@@ -111,6 +114,19 @@ Many users run the compose file in a stack editor (OMV's Compose plugin, Portain
 - **The environment file is private.** It is git-ignored, it may hold the password, and quotes are needed around values with `$` or `#`. Provide a `.env.template` with placeholders and say it.
 - **Addresses the container reaches** (another service, the NAS) are the host's address on the network, never `localhost`: inside the container that is the container itself. Say it next to the variable.
 
+### 7.2 The permissions section of the README
+
+**Add a `Permissions` section whenever the operator has to grant access to something on the host:** a mounted folder or file (the data, an input folder, a secret given as a file), a socket or a device. Leave it out when there is nothing to grant. Permissions are a usual reason for a first start to fail, so link the section from the rows of the variables table that need it. It holds:
+
+- **Who needs what, kept apart.** The *process in the container* (its user id, main group and additional groups, and which compose key and variable sets each); the *user on the host* (whether the app needs one at all, or it only serves to reserve the numbers, and that its groups do not reach the container); and *other people or apps* that write in the same folders, whose access the app does not need. Say how to find the numbers (`id <user>`, `getent group <group>`). An image that starts as root and then switches user (the `PUID`/`PGID` style) works differently: describe what this image does.
+- **A table with one row for each thing, not just each mount:** the folder itself, the subfolders on the way to a file, the files already there, and the files the app creates. For each, the exact access needed and why in a few words: a folder is read (list), written (create, delete) and entered (`x`) separately, and a file inside needs its own access. Say what is **not** needed too (no write access to a folder mounted read-only), and what needs nothing.
+- **What happens over time:** which access new files must get when others add them (default ACL, setgid bit, umask), who owns the files the app creates and with which mode, and what to do after changing the container's user. Check the last one: an app can start fine and then fail at the first write.
+- **A complete example** with invented numbers: what the folders grant, the variables, and the ids the process ends up with.
+- **How to check:** what the container really got (`docker inspect` for `user` and `group_add`, `id` inside a running container, which needs recreating the container after a change) and what the host grants (`ls -ldn`, `getfacl -n`; with an ACL, the group digits of `ls -l` show the mask, not the rights of the owning group).
+- **A table from symptom to cause,** with the messages the app really shows, including the misleading ones (a "not found" for a file that is there, a generic failure for a file it cannot read) and what the startup validation does not check.
+
+Take every row from the app's code and from trying it (section 8), not from what permissions should do in theory.
+
 ## 8. Check it
 
 Run it for real, on throwaway folders, as a non-root user:
@@ -119,6 +135,7 @@ Run it for real, on throwaway folders, as a non-root user:
 - It starts, the health check turns healthy, and the first request works.
 - Data survives a restart of the container.
 - With a data folder that cannot be written, a missing input folder and a missing required variable, it fails with a message that says how to fix it.
+- With a permissions section (7.2): on throwaway volumes, take away one access at a time (each group, a subfolder, a single file, and a different user on data that already exists) and write in the README what really happens in each case.
 - The image history and the layers contain no secrets, and the process is not root. `docker inspect` of the running container shows no secret in its environment, and the secret file is readable by the non-root user.
 - The README's compose file and example environment file, copied to an empty folder, start the container (`docker compose config` first). A missing required variable stops with the message you wrote.
 - A timeout or limit with a default was tried against the **real** system, including a cold first call: defaults chosen on a warm test can fail in production.

@@ -33,7 +33,8 @@ Ask the human, proposing a default for each answer:
 - **Levels, used consistently:** error for an unexpected failure someone may need to act on; warning for something rejected or degraded but handled; information for a significant event that completed (created, changed, removed, started); debug for detail, off in production.
 - Log an unexpected exception once, where it is handled, with its stack trace. Log expected rejections as warnings with their reason and the values that caused them, without a stack trace.
 - **Never return the exception to the caller.** The caller gets a message and the trace id; the full detail stays in the log, found through that id.
-- **What to log:** the outcome of each unit of work that changes something (created, changed, removed, rejected, failed), startup and its validation result, and calls to other systems that failed or were slow. Do not log every read, every step of a loop or the success of trivial operations; the span already says they happened.
+- **What to log:** the outcome of each unit of work that changes something (created, changed, removed, rejected, failed), startup and its validation result, and calls to other systems that failed or were slow. Do not log every read, every step of a loop or the success of trivial operations; the span already says they happened. The one exception is the request line of a server (next point).
+- **A server writes one line per request, its own, successful ones included** (method, route or path without personal data, status, duration), in place of the several lines the framework writes for each: raise the framework's request logs to warning. The level depends on the request: a successful **health check** is debug (hidden by default, and there when someone asks for it), any other request is information, and a server error is warning, the health check included. A log level setting cannot tell these apart, so decide the level in the code that writes the line. Do not silence the health check by hiding the successful requests with it.
 - **Log once.** Do not log an error and then rethrow it for another layer to log again: the same failure would appear several times. The layer that handles it logs it.
 - **Keep it quiet when nothing happens.** A repeated failure (a dependency that is down, a retry loop) must not write thousands of identical lines: log the first, then a count or a lower level.
 - **Messages are written in English, in the same style in every project:** a short sentence about what happened, in the past tense, with no punctuation tricks, so the shared backend reads uniformly.
@@ -51,6 +52,7 @@ Telemetry pipelines are a classic way to leak data, and a log cannot be taken ba
 
 - One span per unit of work that enters the app (a request, a job, a command), named for what it does, not for the data it handles. Add child spans only around meaningful steps (a store, a call to another system, a long computation), with the outcome as an attribute: success, or the error kind.
 - Use the framework's automatic instrumentation for the incoming and outgoing protocols; add manual spans for the app's own steps.
+- **Do not trace the health check.** Filter it out in the instrumentation. It runs for as long as the app does, so its spans would bury the real ones in the shared backend.
 - **Correlation:** the log records written inside a span carry its trace id and span id. Use the SDK's logging bridge so this happens by itself; do not copy ids by hand.
 - Sampling: keep everything at small scale. If volume ever demands sampling, sample the same way in every project.
 
@@ -99,6 +101,7 @@ Run the app and look at the backend, not at the code:
 
 - With the endpoint empty, the app starts, works and logs to the console.
 - With it set, trigger one successful and one failing operation: both appear, with the right service name, version and environment.
+- For a server, call the health check and one real request: the real one leaves its span and one log line at information; the health check leaves no span and, at the default level, no log line. An automated test of this waits for the real request's span and line before asserting: the caller can get the response before the server has written them.
 - Find the failing one by its trace id, and see the log lines and the spans together.
 - Read the stored records and confirm there is no user content, secret or full body in them. Search them for the real secret value, not only for the word "password". Check that `service.name`, `service.version` and the environment arrive as resource attributes (the backend may show them under the record's resource, not among its properties).
 - Stop the backend: the app still answers at normal speed and the console still shows the logs. Start it again: new records arrive.
